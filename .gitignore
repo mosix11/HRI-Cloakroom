@@ -1,6 +1,6 @@
 # Project specific folders and files
 backup/
-
+rosenv/
 
 # ROS2 colcon build directories
 build/
