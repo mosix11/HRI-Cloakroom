@@ -37,7 +37,7 @@ stream = p.open(format=FORMAT,
 stream.start_stream()
 
 # Load Whisper model (choose "tiny" or "base" for faster inference)
-model = whisper.load_model("tiny")  # or "base" for slightly better quality
+model = whisper.load_model("tiny.en")  # or "base" for slightly better quality
 
 def transcribe_stream():
     buffer = b""

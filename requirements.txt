@@ -1,0 +1,8 @@
+torch
+torchvision
+deepface
+llama-cpp-python -C cmake.args="-DGGML_CUDA=on"
+tqdm
+soundfile
+kokoro
+whisper-live
