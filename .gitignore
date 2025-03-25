@@ -1,6 +1,12 @@
 # Project specific folders and files
 backup/
-rosenv/
+venvs/
+temp/
+venvs/WhisperLive-Text/
+
+
+# Environment variables
+.env
 
 # ROS2 colcon build directories
 build/
