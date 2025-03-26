@@ -12,6 +12,7 @@ pip install opencv-python
 pip install onnxruntime-gpu
 pip install insightface
 pip install python-dotenv tqdm
+pip install ultralytics
 deactivate
 
 source perception-audio/bin/activate
@@ -22,7 +23,7 @@ cd WhisperLive-Text
 pip install -e .
 # pip install .
 cd ..
-rm -rf WhisperLive-Text
+# rm -rf WhisperLive-Text
 deactivate
 
 source interaction/bin/activate

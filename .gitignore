@@ -3,7 +3,8 @@ backup/
 venvs/
 temp/
 venvs/WhisperLive-Text/
-
+output.srt
+0.wav
 
 # Environment variables
 .env

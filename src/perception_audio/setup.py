@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'perception'
+package_name = 'perception_audio'
 
 setup(
     name=package_name,
