@@ -1,0 +1,3 @@
+export PYTHONPATH="/home/mosix11/Projects/HRI/HRI-Cloakroom/venvs/perception-video/lib/python3.12/site-packages"
+colcon build --packages-select perception_video
+source install/setup.bash

@@ -450,6 +450,7 @@ if __name__ == '__main__':
             new_faces = face_model.get(frame)
             for face in new_faces:
                 # Filter out low-confidence detections.
+                print(face.gender)
                 if face.det_score < DETECTION_SCORE_TSH:
                     continue
                 new_box = (int(face.bbox[0]), int(face.bbox[1]), int(face.bbox[2]), int(face.bbox[3]))

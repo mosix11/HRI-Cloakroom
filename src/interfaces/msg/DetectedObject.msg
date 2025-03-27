@@ -1,0 +1,2 @@
+string type
+BoundingBox2D bbox

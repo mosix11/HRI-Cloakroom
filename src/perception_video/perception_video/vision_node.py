@@ -2,7 +2,12 @@
 import rclpy
 from rclpy.node import Node
 # from std_msgs.msg import StringMultiArray
-from perception_video.msg import DetectedFace, DetectedFaces 
+from interfaces.msg import VisionInfo, DetectedFace, DetectedObject, BoundingBox2D
+from sensor_msgs.msg import CompressedImage
+
+from cv_bridge import CvBridge
+import cv2
+import image_transport
 import cv2
 import torch
 import numpy as np
@@ -34,7 +39,11 @@ class VisionNode(Node):
         vision_node_dir.mkdir(exist_ok=True, parents=True)
         
         # Create publisher for detected face user IDs
-        self.face_pub = self.create_publisher(DetectedFaces, 'detected_faces', 10)
+        self.face_pub = self.create_publisher(DetectedFaces, 'vision/detected_faces', 10)
+        self.image_transport = image_transport.ImageTransport(self)
+        self.obj_pub = self.image_transport.advertise('vision/detected_objects', 'compressed')
+        self.bridge = CvBridge()
+
         
         # Detection parameters
         self.detection_FPS = 6  # Run detection every 5 frames
@@ -190,13 +199,15 @@ class VisionNode(Node):
         for _, _, _, _, user_id, gender, talking in self.last_face_annotations:
             face = DetectedFace()
             face.user_id = user_id
-            face.gender = gender   # Default/empty until available
+            face.gender = bool(gender)   # Default/empty until available
             face.talking = talking  # Default value
             faces_msg.faces.append(face)
         
             # Publish the single message containing all detected faces
         self.face_pub.publish(faces_msg)
         self.get_logger().info(f"Published {len(faces_msg.faces)} faces in one message.")
+        
+        
 
                 
                 

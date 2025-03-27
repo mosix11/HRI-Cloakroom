@@ -1,1 +1,0 @@
-DetectedFace[] faces
