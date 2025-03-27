@@ -4,10 +4,9 @@ from rclpy.node import Node
 # from std_msgs.msg import StringMultiArray
 from interfaces.msg import VisionInfo, DetectedFace, DetectedObject, BoundingBox2D
 from sensor_msgs.msg import CompressedImage
+from std_msgs.msg import Header
 
 from cv_bridge import CvBridge
-import cv2
-import image_transport
 import cv2
 import torch
 import numpy as np
@@ -35,13 +34,11 @@ class VisionNode(Node):
         self.get_logger().info("Starting Vision Node")
         
         base_dir = Path(os.path.expanduser('~/.hri_cloakroom'))
-        vision_node_dir = base_dir / Path('vision')
-        vision_node_dir.mkdir(exist_ok=True, parents=True)
+        vision_pkg_dir = base_dir / Path('vision')
+        vision_pkg_dir.mkdir(exist_ok=True, parents=True)
         
-        # Create publisher for detected face user IDs
-        self.face_pub = self.create_publisher(DetectedFaces, 'vision/detected_faces', 10)
-        self.image_transport = image_transport.ImageTransport(self)
-        self.obj_pub = self.image_transport.advertise('vision/detected_objects', 'compressed')
+        # Create publisher for detected visual information
+        self.visinfo_pub = self.create_publisher(VisionInfo, 'vision/vision_info', 10)
         self.bridge = CvBridge()
 
         
@@ -56,22 +53,22 @@ class VisionNode(Node):
 
         
         # Initialize your models and database
-        self.db_env = self.initialize_db(vision_node_dir)
+        self.db_env = self.initialize_db(vision_pkg_dir)
         self.user_embeddings = self.load_user_embeddings(self.db_env)
         
         # Download YOLO model if needed
-        yolov12_url = 'https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11x.pt'
-        self.yolo_model_path = vision_node_dir / Path('models/yolov12.pt')
+        yolov11_url = 'https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11x.pt'
+        self.yolo_model_path = vision_pkg_dir / Path('models/yolov11x.pt')
         self.yolo_model_path.parent.mkdir(exist_ok=True, parents=True)
         if not self.yolo_model_path.exists():
-            self.download_file_fast(yolov12_url, self.yolo_model_path)
+            self.download_file_fast(yolov11_url, self.yolo_model_path)
         
         # Initialize object detection model (YOLO)
         self.obj_model = YOLO(self.yolo_model_path)
         self.obj_model = self.obj_model.eval().to(torch.device('cuda'))
         
         # Initialize face detection model
-        self.face_model = insightface.app.FaceAnalysis(name='buffalo_l', root=str(vision_node_dir))
+        self.face_model = insightface.app.FaceAnalysis(name='buffalo_l', root=str(vision_pkg_dir))
         self.face_model.prepare(ctx_id=0)  # 0 for GPU
         
         # For storing detection annotations
@@ -101,7 +98,11 @@ class VisionNode(Node):
             return
         
         # self.current_frame += int(30 / self.detection_FPS)
-
+        
+        success, encoded_frame = cv2.imencode('.jpg', frame)
+        if not success:
+            self.get_logger().error("Failed to encode image!")
+            return
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
 
@@ -194,18 +195,42 @@ class VisionNode(Node):
                 talking = candidate['talking']
                 self.last_face_annotations.append((x1, y1, x2, y2, user_id, gender, talking))
         
-        # --- Publish the Detected Faces ---
-        faces_msg = DetectedFaces()
-        for _, _, _, _, user_id, gender, talking in self.last_face_annotations:
-            face = DetectedFace()
-            face.user_id = user_id
-            face.gender = bool(gender)   # Default/empty until available
-            face.talking = talking  # Default value
-            faces_msg.faces.append(face)
+        # --- Publish the Detection Results ---
+        vision_msg = VisionInfo()
+        img_msg = CompressedImage()
+        img_msg.header = Header()
+        img_msg.header.stamp = self.get_clock().now().to_msg()  # or wherever you get a timestamp
+        img_msg.format = "jpg"  # or "jpg", "png" etc.
+        img_msg.data = np.array(encoded_frame).tobytes()
+        vision_msg.frame = img_msg        
         
-            # Publish the single message containing all detected faces
-        self.face_pub.publish(faces_msg)
-        self.get_logger().info(f"Published {len(faces_msg.faces)} faces in one message.")
+        for x_min, y_min, x_max, y_max, user_id, gender, talking in self.last_face_annotations:
+            face = DetectedFace()
+            bbox = BoundingBox2D()
+            bbox.x_min = x_min
+            bbox.y_min = y_min
+            bbox.x_max = x_max
+            bbox.y_max = y_max
+            face.user_id = user_id
+            face.gender = bool(gender)   
+            face.talking = talking 
+            face.bbox = bbox
+            vision_msg.faces.append(face)
+            
+        for x_min, y_min, x_max, y_max, obj_label, conf_score in self.last_obj_annotations:
+            obj = DetectedObject()
+            bbox = BoundingBox2D()
+            bbox.x_min = x_min
+            bbox.y_min = y_min
+            bbox.x_max = x_max
+            bbox.y_max = y_max
+            obj.type = obj_label
+            vision_msg.objects.append(obj)
+            
+        
+        # Publish the single message containing all detected faces and objects alongsied the actual captured frame
+        self.visinfo_pub.publish(vision_msg)
+        self.get_logger().info(f"Published {len(vision_msg.faces)} faces and {len(vision_msg.objects)} objects on `vision/vision_info` topic.")
         
         
 
@@ -359,7 +384,7 @@ def main(args=None):
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        node.get_logger().info("Keyboard Interrupt, shutting down.")
+        node.get_logger().info("Keyboard Interrupt, shutting down vision node.")
     finally:
         node.destroy_node()
         rclpy.shutdown()

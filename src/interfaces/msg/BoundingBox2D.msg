@@ -1,4 +1,4 @@
-float32 x_min
-float32 y_min
-float32 x_max
-float32 y_max
+int64 x_min
+int64 y_min
+int64 x_max
+int64 y_max

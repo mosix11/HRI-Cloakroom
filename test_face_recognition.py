@@ -517,6 +517,7 @@ if __name__ == '__main__':
         
         # Draw object detection annotations (red boxes).
         for (x1, y1, x2, y2, label, conf) in last_obj_annotations:
+            print(type(x1))
             cv2.rectangle(frame, (x1, y1), (x2, y2), color=(255, 0, 0), thickness=2)
             cv2.putText(frame, f"{label}: {conf:.2f}", (x1, y1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)

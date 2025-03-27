@@ -20,6 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'ASR_server_node = perception_audio.ASR_server_node:main',
+            'ASR_client_node = perception_audio.ASR_client_node:main'
         ],
     },
 )
