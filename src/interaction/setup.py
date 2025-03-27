@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'interaction_node = interaction.interaction_node:main'
+            'interaction_node = interaction.interaction_node:main',
+            'TTS_action_server = interaction.TTS_action_server:main'
         ],
     },
 )

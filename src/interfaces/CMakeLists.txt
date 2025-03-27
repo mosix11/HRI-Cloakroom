@@ -22,6 +22,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/DetectedObject.msg"
   "msg/VisionInfo.msg"
   "msg/ASRTranscript.msg"
+  "action/Speak.action"
   DEPENDENCIES std_msgs sensor_msgs geometry_msgs
 )
 # if the messages use any of the default interface types, add them like the following

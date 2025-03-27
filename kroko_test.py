@@ -19,7 +19,11 @@ import argparse
 
 def main(text):
     print('Kroko Text:', text)
-    pipeline = KPipeline(lang_code='a', device='cuda')
+    pipeline = KPipeline(
+        lang_code='a',
+        device='cuda',
+        repo_id='hexgrad/Kokoro-82M'
+    )
     
     # am_fenrir voice is selected; change voice if needed.
     generator = pipeline(
@@ -28,9 +32,9 @@ def main(text):
     )
 
     for i, (gs, ps, audio) in enumerate(generator):
-        print(i)     # index
-        print(gs)    # graphemes/text
-        print(ps)    # phonemes
+        # print(i)     # index
+        # print(gs)    # graphemes/text
+        # print(ps)    # phonemes
         sd.play(audio, samplerate=24000)
         sd.wait()
         sf.write(f'{i}.wav', audio, 24000)  # save each audio file
