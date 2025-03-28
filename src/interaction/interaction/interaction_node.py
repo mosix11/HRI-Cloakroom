@@ -7,6 +7,9 @@ from interfaces.action import Speak
 from sensor_msgs.msg import CompressedImage
 from std_msgs.msg import Header, String
 
+import llama_cpp
+from llama_cpp import Llama
+
 import os
 from pathlib import Path
 import requests
@@ -25,6 +28,22 @@ class InteractionNode(Node):
         base_dir = Path(os.path.expanduser('~/.hri_cloakroom'))
         interaction_pkg_dir = base_dir / Path('interaction')
         interaction_pkg_dir.mkdir(exist_ok=True, parents=True)
+        
+        llm_model_url = "https://huggingface.co/unsloth/Phi-4-mini-instruct-GGUF/resolve/main/Phi-4-mini-instruct-Q6_K.gguf"
+        llm_model_filename = "unsloth_Phi-4-mini-instruct-Q6_K.gguf"
+        llm_model_path = interaction_pkg_dir / Path('models') / llm_model_filename
+        llm_model_path.parent.mkdir(exist_ok=True, parents=True)
+        
+        if not llm_model_path.exists():
+            self.download_file_fast(llm_model_url, llm_model_path)
+            
+        self.llm = Llama(
+            model_path=llm_model_path,   
+            n_gpu_layers=-1,
+            verbose=False,
+            n_ctx=4096
+        )  # adjust context window if needed
+
         
         # self.tts_pub = self.create_publisher(String, 'interaction/tts', 10)
         self._TTS_action_client = ActionClient(self, Speak, 'interaction/speak')
@@ -49,6 +68,7 @@ class InteractionNode(Node):
 
     def transcription_callback(self, msg: ASRTranscript):
         self.get_logger().info(f"Received ASR Transcript: '{msg.transcript}' (datetime: {msg.timestamp})")
+        self.send_TTS_goal(msg.transcript)
 
     def vision_callback(self, msg: VisionInfo):
         self.get_logger().info(f"Received Vision Info: {len(msg.faces)} Faces and {len(msg.objects)} Objects")
@@ -60,7 +80,7 @@ class InteractionNode(Node):
         action_goal.text = text
         self._TTS_action_client.wait_for_server()
         future = self._TTS_action_client.send_goal_async(action_goal)
-        future.add_done_callback()
+        future.add_done_callback(self.TTS_goal_response_callback)
         
     def TTS_goal_response_callback(self, future):
         goal_handle = future.result()
@@ -70,7 +90,7 @@ class InteractionNode(Node):
             return
         
         self.get_logger().info("TTS goal accepted, waiting for result...")
-        goal_handle.get_result_async().add_done_callback(self.get_result_callback)
+        goal_handle.get_result_async().add_done_callback(self.TTS_get_result_callback)
     
     def TTS_get_result_callback(self, future):
         result = future.result().result

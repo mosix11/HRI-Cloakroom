@@ -42,12 +42,12 @@ class TTSActionServer(Node):
         )
         
         
-    def speak_callback(self, goal_handle: Speak):
+    def speak_callback(self, goal_handle):
         self.get_logger().info('Executing TTS...')
         
         
-        generator = self.pipeline(
-            goal_handle.text, voice='am_fenrir',  # change voice here
+        generator = self.TTS_pipeline(
+            goal_handle.request.text, voice='am_fenrir',  # change voice here
             speed=1, split_pattern=r'\n+'
         )
         for i, (gs, ps, audio) in enumerate(generator):
