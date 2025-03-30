@@ -267,11 +267,12 @@ class VisionNode(Node):
                 self.destroy_node()
                 rclpy.shutdown()        
     
+    
 
     def initialize_db(self, dir: Path):
         db_path = dir / Path('db/face_embs.lmdb')
         db_path.parent.mkdir(exist_ok=True, parents=True)
-        db_env = lmdb.open(str(db_path.absolute()), map_size=int(1e8)) # 0.1GB max size
+        db_env = lmdb.open(str(db_path.absolute()), map_size=int(1e9)) # 0.1GB max size
         return db_env
 
     # Helper function: Intersection over Union (IoU) for two bounding boxes.

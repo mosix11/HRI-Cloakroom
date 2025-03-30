@@ -13,6 +13,7 @@ pip install onnxruntime-gpu
 pip install insightface
 pip install python-dotenv tqdm
 pip install ultralytics
+pip install lmdb
 deactivate
 
 source perception-audio/bin/activate
@@ -20,16 +21,19 @@ pip install torch torchaudio
 pip install tqdm python-dotenv
 git clone git@github.com:mosix11/WhisperLive-Text.git
 cd WhisperLive-Text
-pip install -e .
-# pip install .
+# pip install -e .
+pip install .
 cd ..
-# rm -rf WhisperLive-Text
+rm -rf WhisperLive-Text
 deactivate
 
 source interaction/bin/activate
 pip install torch torchaudio
 pip install flash-attn --no-build-isolation
-pip install llama-cpp-python -C cmake.args="-DGGML_CUDA=on"
+pip install openai
+pip install lmdb
+# pip install llama-cpp-python -C cmake.args="-DGGML_CUDA=on"
+pip install 'llama-cpp-python[server]' -C cmake.args="-DGGML_CUDA=on" -C force_cmake=1
 pip install tqdm soundfile sounddevice python-dotenv
 pip install kokoro
 deactivate
