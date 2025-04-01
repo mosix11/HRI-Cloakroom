@@ -30,28 +30,28 @@ def download_file_fast(url, output_path):
 def generate_launch_description():
     pkg_share = get_package_share_directory('interaction')
     
-    base_dir = Path(os.path.expanduser('~/.hri_cloakroom'))
-    interaction_pkg_dir = base_dir / Path('interaction')
-    interaction_pkg_dir.mkdir(exist_ok=True, parents=True)
+    # base_dir = Path(os.path.expanduser('~/.hri_cloakroom'))
+    # interaction_pkg_dir = base_dir / Path('interaction')
+    # interaction_pkg_dir.mkdir(exist_ok=True, parents=True)
     
-    llm_model_url = "https://huggingface.co/unsloth/Phi-4-mini-instruct-GGUF/resolve/main/Phi-4-mini-instruct-Q6_K.gguf"
-    llm_model_filename = "unsloth_Phi-4-mini-instruct-Q6_K.gguf"
-    llm_model_path = interaction_pkg_dir / Path('models') / llm_model_filename
-    llm_model_path.parent.mkdir(exist_ok=True, parents=True)
+    # llm_model_url = "https://huggingface.co/unsloth/Phi-4-mini-instruct-GGUF/resolve/main/Phi-4-mini-instruct-Q6_K.gguf"
+    # llm_model_filename = "unsloth_Phi-4-mini-instruct-Q6_K.gguf"
+    # llm_model_path = interaction_pkg_dir / Path('models') / llm_model_filename
+    # llm_model_path.parent.mkdir(exist_ok=True, parents=True)
     
-    if not llm_model_path.exists():
-        download_file_fast(llm_model_url, llm_model_path)
+    # if not llm_model_path.exists():
+    #     download_file_fast(llm_model_url, llm_model_path)
     
-    host = '127.0.0.1'
-    port = '9585'
-    n_gpu_layers = '-1'
-    n_ctx = '16384'
-    verbose = 'False'
-    llama_server_process = ExecuteProcess(
-            cmd=['python3', '-m', 'llama_cpp.server', '--host', host, '--port', port, '--model', str(llm_model_path.absolute()), '--n_gpu_layers', n_gpu_layers, '--n_ctx', n_ctx, '--verbose', verbose],
-            output='screen',
-            name='llama_cpp_server'  # Optional, just for identification in logs
-        )
+    # host = '127.0.0.1'
+    # port = '9585'
+    # n_gpu_layers = '-1'
+    # n_ctx = '16384'
+    # verbose = 'False'
+    # llama_server_process = ExecuteProcess(
+    #         cmd=['python3', '-m', 'llama_cpp.server', '--host', host, '--port', port, '--model', str(llm_model_path.absolute()), '--n_gpu_layers', n_gpu_layers, '--n_ctx', n_ctx, '--verbose', verbose],
+    #         output='screen',
+    #         name='llama_cpp_server'  # Optional, just for identification in logs
+    #     )
     
     # 'python3 -m llama_cpp.server --host 127.0.0.1 --port 9585 --model ~/.hri_cloakroom/interaction/models/unsloth_Phi-4-mini-instruct-Q6_K.gguf --n_gpu_layers -1 --n_ctx 16384 --verbose False'
     
@@ -71,7 +71,7 @@ def generate_launch_description():
     
     
     return LaunchDescription([
-        llama_server_process,
+        # llama_server_process,
         TTS_action_server_node,
         interaction_node
     ])

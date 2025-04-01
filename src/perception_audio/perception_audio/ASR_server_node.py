@@ -13,7 +13,7 @@ class ASRServer(Node):
     
     def __init__(self):
         super().__init__('ASR_server_node')
-        self.get_logger().info("Starting Vision Node")
+        self.get_logger().info("Starting ASR Server Node")
         
         base_dir = Path(os.path.expanduser('~/.hri_cloakroom'))
         audio_pkg_dir = base_dir / Path('audio')
