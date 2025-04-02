@@ -437,6 +437,23 @@ def start_interaction_OpenAI():
         print("\nStopped by user.")
 
 
+from llama_cpp.llama_tokenizer import LlamaHFTokenizer
+
+def start_interaction_functionary(model_path):
+    Llama.from_pretrained(
+        repo_id="meetkai/functionary-small-v2.4-GGUF",
+        filename="functionary-small-v2.4.Q4_0.gguf",
+        chat_format="functionary-v2",
+        tokenizer=LlamaHFTokenizer.from_pretrained("meetkai/functionary-small-v2.4-GGUF"),
+        n_gpu_layers=-1
+    )
+
+    llm_client = Llama(
+        model_path=str(model_path.absolute()),   
+        n_gpu_layers=-1,
+        verbose=False,
+        n_ctx=16384,
+    )
 
 def download_file_fast(url, output_path):
     """Downloads a file with a progress bar and handles retries."""

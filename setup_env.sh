@@ -30,10 +30,9 @@ deactivate
 source interaction/bin/activate
 pip install torch torchaudio
 pip install flash-attn --no-build-isolation
-pip install openai
 pip install lmdb
-# pip install llama-cpp-python -C cmake.args="-DGGML_CUDA=on"
-pip install 'llama-cpp-python[server]' -C cmake.args="-DGGML_CUDA=on" -C force_cmake=1
+pip install llama-cpp-python -C cmake.args="-DGGML_CUDA=on"
+# pip install 'llama-cpp-python[server]' -C cmake.args="-DGGML_CUDA=on" -C force_cmake=1
 pip install tqdm soundfile sounddevice python-dotenv
 pip install kokoro
 deactivate

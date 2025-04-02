@@ -223,7 +223,7 @@ class InteractionNode(Node):
 
     
     def perform_pick_action(self, objects):
-        self.get_logger().log('Performing pick action ...')
+        self.get_logger().info('Performing pick action ...')
         self.PERFORMING_ACTION_LOCK = True
         # TODO implement action
         
@@ -238,7 +238,7 @@ class InteractionNode(Node):
         return {'sucsess': success, 'message': message}
     
     def perform_return_action(self, belongings):
-        self.get_logger().log('Performing return action ...')
+        self.get_logger().info('Performing return action ...')
         self.PERFORMING_ACTION_LOCK = True
         # TODO implement action
         
@@ -259,9 +259,9 @@ class InteractionNode(Node):
         text = raw_text.replace(prefix1, '')
         text = text.replace(prefix2, '')
         
-        if raw_text.startswith("\'"):
+        if raw_text.startswith("\'") or raw_text.startswith("\""):
             text = text[1:]
-        if raw_text.endswith("\'"):
+        if raw_text.endswith("\'") or raw_text.endswith("\""):
             text = text[:-1]
         if text == '':
             print(raw_text)
@@ -273,7 +273,7 @@ class InteractionNode(Node):
         function_call = False
         if 'pick_up_items_and_store' in message.lower():
             self.LLM_INFERENCE_LOCK = False
-            self.get_logger().log('pick_up_items_and_store() called')
+            self.get_logger().info('pick_up_items_and_store() called')
             usr_chathistory.append(
                 {
                     'role': 'assistant',
@@ -302,7 +302,7 @@ class InteractionNode(Node):
             
         elif 'return_stored_items' in message.lower():
             self.LLM_INFERENCE_LOCK = False
-            self.get_logger().log('return_stored_items() called')
+            self.get_logger().info('return_stored_items() called')
             usr_chathistory.append(
                 {
                     'role': 'assistant',
@@ -331,7 +331,7 @@ class InteractionNode(Node):
             
         else:
             self.LLM_INFERENCE_LOCK = False
-            self.get_logger().log('LLM response:', message)
+            self.get_logger().info(f'LLM response: {message}')
             usr_chathistory.append({'role': 'assistant', 'content': message})
         
         return usr_chathistory, function_call
@@ -354,28 +354,28 @@ class InteractionNode(Node):
         
         usr_chathistory.append(usr_prmpt)
         
-        try:
-            prompt = self.prmpt_template.render(messages=usr_chathistory, tools=self.FUNCTION_DESCRIPTIONS, tools_in_user_message=False, date_string="31 Mar 2025")
+        # try:
+        prompt = self.prmpt_template.render(messages=usr_chathistory, tools=self.FUNCTION_DESCRIPTIONS, tools_in_user_message=False, date_string="31 Mar 2025")
+        response = self.llm_client(prompt=prompt, max_tokens=512)
+        
+        usr_chathistory, function_call = self.parse_llm_response_and_perform_actions(response, usr_chathistory, curr_objs, usr_belongings)
+        
+        if function_call:
+            self.LLM_INFERENCE_LOCK = True
+            prompt =  self.prmpt_template.render(messages=usr_chathistory, tools=self.FUNCTION_DESCRIPTIONS, tools_in_user_message=False, add_generation_prompt=True, date_string="31 Mar 2025")
+            # print('\n\n\n\n', prompt, '\n\n\n\n')
             response = self.llm_client(prompt=prompt, max_tokens=512)
-            
             usr_chathistory, function_call = self.parse_llm_response_and_perform_actions(response, usr_chathistory, curr_objs, usr_belongings)
             
             if function_call:
-                self.LLM_INFERENCE_LOCK = True
-                prompt =  self.prmpt_template.render(messages=usr_chathistory, tools=self.FUNCTION_DESCRIPTIONS, tools_in_user_message=False, add_generation_prompt=True, date_string="31 Mar 2025")
-                # print('\n\n\n\n', prompt, '\n\n\n\n')
-                response = self.llm_client(prompt=prompt, max_tokens=512)
-                usr_chathistory, function_call = self.parse_llm_response_and_perform_actions(response, usr_chathistory)
-                
-                if function_call:
-                    print('EEERRRRROOOOOORRRRRR: The model called two functions consecutively!')
-                
-            self.send_TTS_goal(usr_chathistory[-1]['content'])
+                print('EEERRRRROOOOOORRRRRR: The model called two functions consecutively!')
+            
+        self.send_TTS_goal(usr_chathistory[-1]['content'])
 
-        except Exception as e:
-            self.get_logger().error(f"An error occurred: {e}")
-        finally:
-            self.LLM_INFERENCE_LOCK = False
+        # except Exception as e:
+        #     self.get_logger().error(f"An error occurred: {e}")
+        # finally:
+        self.LLM_INFERENCE_LOCK = False
         
         # try:
         #     response = self.llm_client.chat.completions.create(
