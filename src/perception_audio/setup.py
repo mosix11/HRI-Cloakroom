@@ -1,6 +1,8 @@
 from setuptools import find_packages, setup
 
 package_name = 'perception_audio'
+from glob import glob
+import os
 
 setup(
     name=package_name,
