@@ -9,6 +9,7 @@
         <geometry>
           <mesh>
             <uri>model://LockerBig/meshes/locker.obj</uri>
+            <scale>0.7 0.7 0.7</scale>
           </mesh>
         </geometry>
       </visual>
@@ -17,6 +18,7 @@
         <geometry>
           <mesh>
             <uri>model://LockerBig/meshes/locker.obj</uri>
+            <scale>0.7 0.7 0.7</scale>
           </mesh>
         </geometry>
       </collision>

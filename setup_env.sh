@@ -14,6 +14,7 @@ pip install insightface
 pip install python-dotenv tqdm
 pip install ultralytics
 pip install lmdb
+pip install gdown
 deactivate
 
 source perception-audio/bin/activate
