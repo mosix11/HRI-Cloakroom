@@ -5,6 +5,7 @@ temp/
 venvs/WhisperLive-Text/
 output.srt
 0.wav
+runs/
 
 # Environment variables
 .env
