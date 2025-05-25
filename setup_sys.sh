@@ -24,6 +24,7 @@ sudo apt update && sudo apt install ros-dev-tools
 sudo apt upgrade
 sudo apt install ros-jazzy-desktop
 sudo apt-get install ros-jazzy-ros-gz
+echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
 
 # sudo apt update && sudo apt install locales
 # sudo locale-gen en_US en_US.UTF-8
