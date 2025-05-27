@@ -12,6 +12,9 @@ import lmdb
 import os
 import json
 import base64
+import numpy as np
+import cv2
+import copy
 
 from pathlib import Path
 import requests
@@ -68,6 +71,7 @@ class InteractionNode(Node):
             self.vision_callback,
             10
         )
+
         
         self.SPEAKING_LOCK = False
         self.LLM_INFERENCE_LOCK = False
@@ -300,30 +304,7 @@ Be very careful about when you invoke the `pick_up_items_and_store` and `return_
                 }
             }
         ]
-        # self.test_db(self.db_env, 'test_user')
-        
-    
-    # def test_db(self, db_env, user_id):
-    #     self.update_chat_history(db_env, user_id, {"role": "user", "content": "Hello, are you available?"})
-    #     self.update_chat_history(db_env, user_id, {"role": "assistant", "content": "Yes, how can I help you?"})
 
-    #     # For demonstration purposes, create a dummy CompressedImage.
-    #     # In a real scenario, this would come from a ROS 2 subscriber callback.
-    #     dummy_image = CompressedImage()
-    #     dummy_image.header = Header()
-    #     # Set dummy timestamp values (these should come from your sensor_msgs.msg.Time or builtin_interfaces.msg.Time)
-    #     dummy_image.header.stamp.sec = 161803398
-    #     dummy_image.header.stamp.nanosec = 314159265
-    #     dummy_image.header.frame_id = "camera_frame"
-    #     dummy_image.format = "jpeg"
-    #     dummy_image.data = b'\xff\xd8\xff\xe0'  # Example JPEG header bytes
-
-    #     # Append the image to the user's record
-    #     self.add_user_image(db_env, user_id, dummy_image)
-
-    #     # Retrieve and print the updated record with chat history and images
-    #     updated_record = self.get_user_record(db_env, user_id)
-    #     self.get_logger().info(f"Updated record: {updated_record}")
         
     def _can_listen(self):
         return not (self.LLM_INFERENCE_LOCK or self.SPEAKING_LOCK or self.PERFORMING_ACTION_LOCK)
@@ -344,6 +325,8 @@ Be very careful about when you invoke the `pick_up_items_and_store` and `return_
             self.current_detected_faces = msg.faces
             self.current_detected_objects = msg.objects
             self.current_frame = msg.frame
+
+
 
     def transcription_callback(self, msg: ASRTranscript):
         self.get_logger().info(f"Received ASR Transcript: '{msg.transcript}' (datetime: {msg.timestamp})")
@@ -389,16 +372,25 @@ Be very careful about when you invoke the `pick_up_items_and_store` and `return_
             usr_locker_id = usr_record['locker_id']
             usr_obj_imgs = usr_record['obj_imgs']
             
-            if locker_id is None and len(usr_obj_imgs) == 0:
+            curr_objs = self.crop_objs(objects)
+            
+            if usr_locker_id is None and len(usr_obj_imgs) == 0:
                 locker_id = 'A10' # TODO fix this by choosing an empty locker  
                 
+                self.add_objs_to_user(self.db_env, usr_id, locker_id, curr_objs)
+                
+                status = 'success'
+                message = 'Items stored successfully.'
+            elif locker_id and len(usr_obj_imgs) > 0:
+                # TODO Implement adding items to the user's (previous) locker.
+                self.get_logger().error('Item addition to previous items has not been implementd')
+            else:
+                self.get_logger().error('Strange situation in pick function.')
             
-            status = 'success'
-            locker_id = 'A10'  
-            message = 'Items stored successfully.'
+            
             
         self.PERFORMING_ACTION_LOCK = False
-        return {'sucsess': status, locker_id: locker_id, 'message': message}
+        return {'status': status, locker_id: locker_id, 'message': message}
     
     # TODO fix locker ID
     def perform_return_action(self, usr_id):
@@ -421,7 +413,7 @@ Be very careful about when you invoke the `pick_up_items_and_store` and `return_
             message = 'Items returned successfully.'
 
         self.PERFORMING_ACTION_LOCK = False
-        return {'sucsess': status, 'message': message}
+        return {'status': status, 'message': message}
     
     def perform_call_staff_action(self, usr_id):
         self.get_logger().info('Calling staff ...')
@@ -546,24 +538,12 @@ Be very careful about when you invoke the `pick_up_items_and_store` and `return_
             second_response = self.llm_client.create_chat_completion(
                 messages=usr_chathistory,
                 tools=self.FUNCTION_DESCRIPTIONS,
-                tool_choice='auto' 
+                tool_choice='auto',
+                temperature=0.0, # TODO remove if the performance is not increased.
+                # top_p=1.0  # TODO uncomment to see the effect.
             )
             
             self.parse_llm_response_and_perform_actions(second_response, usr_id, curr_objs)
-            
-            # final_assistant_message = second_response['choices'][0]['message']
-            # usr_chathistory.append(final_assistant_message) 
-            # self.update_chat_history(self.db_env, usr_id, usr_chathistory[-1])
-            
-            # self.LLM_INFERENCE_LOCK = False
-
-            # if final_assistant_message.get("content"):
-            #     self.get_logger().info(f"Assistant: {final_assistant_message['content']}")
-            # elif final_assistant_message.get("tool_calls"):
-            #     self.get_logger().info(f"Assistant: (Decided to use more tools: {final_assistant_message['tool_calls']})")
-                
-            # else:
-            #     self.get_logger().error(f"Assistant: (Responded without content after tool use: {final_assistant_message})")
         
         self.LLM_INFERENCE_LOCK = False  
             
@@ -592,6 +572,8 @@ Be very careful about when you invoke the `pick_up_items_and_store` and `return_
                 messages=usr_chathistory,
                 tools=self.FUNCTION_DESCRIPTIONS,
                 tool_choice='auto',
+                temperature=0.0, # TODO remove if the performance is not increased.
+                # top_p=1.0  # TODO uncomment to see the effect.
             )
         
         self.parse_llm_response_and_perform_actions(response, usr_id, curr_objs)
@@ -650,6 +632,34 @@ Be very careful about when you invoke the `pick_up_items_and_store` and `return_
                 bar.update(len(data))
         
         
+    def crop_objs(self, objs: List[DetectedObject]):
+        img_msg = self.current_frame
+        if img_msg.format == "jpeg":
+            np_arr = np.frombuffer(img_msg.data, np.uint8)
+            frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+            if frame is None:
+                self.get_logger().error("Failed to decode frame from received data.")
+                return
+
+            obj_list = []
+            # 2. Iterate through detected objects and crop
+            for det_obj in objs:
+                x_min = det_obj.bbox.x_min
+                y_min = det_obj.bbox.y_min
+                x_max = det_obj.bbox.x_max
+                y_max = det_obj.bbox.y_max
+                
+                obj_crop = frame[y_min : y_max, x_min : x_max]
+                
+                obj_list.append({
+                    'type': det_obj.type,
+                    'img': obj_crop
+                })
+        
+        return obj_list
+                
+        
     def get_user_record(self, db_env, user_id: str):
         """
         Retrieve the record for a given user, which includes both chat history and images.
@@ -662,6 +672,40 @@ Be very careful about when you invoke the `pick_up_items_and_store` and `return_
                 # Return an empty record if it doesn't exist.
                 return {"chat_history": [], "locker_id": None, "obj_imgs": []}
             return json.loads(data.decode('utf-8'))
+        
+    def convert_record_imgs_to_cv2(self, user_record: dict) -> dict:
+        """
+        Converts base64 encoded image strings in 'obj_imgs' back to cv2 (numpy) images.
+        Modifies the record in place and returns it.
+        """
+        if "obj_imgs" in user_record:
+            for obj_data in user_record["obj_imgs"]:
+                # Ensure 'img' key exists and its value is not None (e.g., if encoding failed during saving)
+                if 'img' in obj_data and obj_data['img'] is not None:
+                    try:
+                        # 1. Base64 decode the string back to bytes
+                        # The stored value is a UTF-8 string, so encode it to bytes first for b64decode
+                        img_base64_string = obj_data['img']
+                        img_bytes = base64.b64decode(img_base64_string.encode('utf-8'))
+                        
+                        # 2. Convert bytes to a NumPy array
+                        np_arr = np.frombuffer(img_bytes, np.uint8)
+                        
+                        # 3. Decode the image from the NumPy array
+                        decoded_img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+                        
+                        if decoded_img is None:
+                            self.get_logger().warning("Failed to decode image from bytes for object type: %s. Setting image to None.", obj_data.get('type', 'unknown'))
+                            obj_data['img'] = None # Set to None if decoding fails
+                        else:
+                            obj_data['img'] = decoded_img
+                    except (base64.binascii.Error, ValueError, TypeError) as e:
+                        self.get_logger().error("Error converting image for object type '%s': %s. Setting image to None.", obj_data.get('type', 'unknown'), e)
+                        obj_data['img'] = None # Set to None on error
+                elif 'img' in obj_data and obj_data['img'] is None:
+                    # Image was explicitly set to None during saving (e.g., encoding failed)
+                    pass # Already handled, no conversion needed
+        return user_record
 
     def save_user_record(self, db_env, user_id: str, record: dict):
         """
@@ -691,31 +735,21 @@ Be very careful about when you invoke the `pick_up_items_and_store` and `return_
         record["chat_history"].append(message)
         self.save_user_record(db_env, user_id, record)
 
-    def add_user_image(self, db_env, user_id: str, image: CompressedImage):
-        """
-        Append a new image to the user's record.
-        
-        The image is converted to a dictionary that contains:
-        - header: including a timestamp (converted from sec and nanosec) and frame_id,
-        - format: the image format (e.g., 'jpeg'),
-        - data: base64 encoded image data.
-        """
+    def add_objs_to_user(self, db_env, user_id: str, locker_id:str, objs: list):
         record = self.get_user_record(db_env, user_id)
         
-        # Convert the image header. Depending on your ROS version, the time fields might differ.
-        # Here we assume the header stamp has 'sec' and 'nanosec' attributes.
-        header_dict = {
-            "stamp": image.header.stamp.sec + image.header.stamp.nanosec * 1e-9,
-            "frame_id": image.header.frame_id
-        }
-        
-        image_dict = {
-            "header": header_dict,
-            "format": image.format,
-            "data": base64.b64encode(image.data).decode('utf-8')
-        }
-        
-        record["obj_imgs"].append(image_dict)
+        objs_copy = copy.deepcopy(objs)
+        for obj in objs_copy:
+            success, encoded_crop = cv2.imencode('.jpg', obj['img'])
+            if success:
+                crop_bytes = encoded_crop.tobytes()
+                obj['img'] = base64.b64encode(crop_bytes).decode('utf-8')
+            else:
+                self.get_logger().error('Error while encoding object image for saving in DB')
+                obj['img'] = None
+            
+        record["obj_imgs"].extend(objs_copy)
+        record["locker_id"] = locker_id
         self.save_user_record(db_env, user_id, record)
             
     def initialize_db(self, dir: Path):

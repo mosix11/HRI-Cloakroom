@@ -47,5 +47,7 @@ pip install llama-cpp-python -C cmake.args="-DGGML_CUDA=on"
 # pip install 'llama-cpp-python[server]' -C cmake.args="-DGGML_CUDA=on" -C force_cmake=1
 pip install tqdm soundfile sounddevice python-dotenv
 pip install kokoro
+pip install opencv-python
+pip install pillow
 deactivate
 
