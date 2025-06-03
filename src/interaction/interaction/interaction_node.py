@@ -539,7 +539,7 @@ Be very careful about when you invoke the `pick_up_items_and_store` and `return_
                 messages=usr_chathistory,
                 tools=self.FUNCTION_DESCRIPTIONS,
                 tool_choice='auto',
-                temperature=0.0, # TODO remove if the performance is not increased.
+                # temperature=0.0, # TODO remove if the performance is not increased.
                 # top_p=1.0  # TODO uncomment to see the effect.
             )
             
@@ -572,7 +572,7 @@ Be very careful about when you invoke the `pick_up_items_and_store` and `return_
                 messages=usr_chathistory,
                 tools=self.FUNCTION_DESCRIPTIONS,
                 tool_choice='auto',
-                temperature=0.0, # TODO remove if the performance is not increased.
+                # temperature=0.0, # TODO remove if the performance is not increased.
                 # top_p=1.0  # TODO uncomment to see the effect.
             )
         

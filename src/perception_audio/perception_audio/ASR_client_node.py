@@ -37,7 +37,7 @@ class ASRClient(Node):
         self._GIBBERISH_WORDS = {
             "you", "you.", "thank you" ,"thank you.", "thanks", "thanks.", "bye", "bye.", "uh", "um", "huh", "hmm", "oh"
         }
-        self._FLUSH_INTERVAL = 1.5  # Seconds to wait after last VAD activity/callback before flushing
+        self._FLUSH_INTERVAL = 1.0  # Seconds to wait after last VAD activity/callback before flushing
         
         # --- State Variables ---
         self._last_sent_full_clean_transcript = ""
