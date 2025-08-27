@@ -29,12 +29,6 @@ pip install -U colcon-common-extensions
 pip install whisper-live
 # pip install torch torchaudio
 # pip install tqdm python-dotenv
-# git clone https://github.com/mosix11/WhisperLive-Text.git
-# cd WhisperLive-Text
-# # pip install -e .
-# pip install .
-# cd ..
-# rm -rf WhisperLive-Text
 deactivate
 
 source interaction/bin/activate
