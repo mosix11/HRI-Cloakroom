@@ -1,9 +1,6 @@
 #!/bin/bash
 mkdir venvs
 cd venvs
-# python3 -m venv --system-site-packages perception-audio
-# python3 -m venv --system-site-packages perception-video
-# python3 -m venv --system-site-packages interaction
 python3 -m venv perception-audio
 python3 -m venv perception-video
 python3 -m venv interaction

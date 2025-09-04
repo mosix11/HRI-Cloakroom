@@ -1,7 +1,7 @@
 #!/bin/bash
 sudo apt update
-sudo apt upgrade
-sudo apt install python3-venv
+sudo apt upgrade -y
+sudo apt install python3-venv -y
 sudo apt install espeak-ng
 
 # Installing ROS 2 Jazzy
