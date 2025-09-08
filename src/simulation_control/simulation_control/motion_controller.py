@@ -20,7 +20,7 @@ class MotionController(Node):
         
         self._item_retrieval_action_server = ActionServer(
             self,
-            StoreItems,
+            ReturnItems,
             'motion_cotroller/return_items',
             self.speak_callback
         )
@@ -43,7 +43,7 @@ class MotionController(Node):
         
             
         goal_handle.succeed()
-        result = StoreItems.Result()
+        result = ReturnItems.Result()
         result.success = True
         result.message = ''
         return result

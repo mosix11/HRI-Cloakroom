@@ -1,14 +1,11 @@
 # StoreItems.action
 
-# Goal: Define the target pose for the NAO
 geometry_msgs/Pose target
 sensor_msgs/CompressedImage frame
 DetectedObject[] objects
 
 ---
-# Result: Indicate if the action succeeded
 bool success
 string message
 ---
-# Feedback: Optionally provide feedback (e.g., progress percentage)
 float32 progress
