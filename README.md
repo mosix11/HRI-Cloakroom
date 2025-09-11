@@ -1,4 +1,4 @@
-# Implementation of the Interaction Module for Cloakroom Robot (HRI & RBC Course Joint Project)
+# Implementation of the Interaction Phase for Cloakroom Robot (HRI & RBC Course Joint Project)
 The project is written in ROS2 Jazzy and is only runnable on Ubuntu version 24.04. In order to run the project, run the following commands in order:
 
 1. Install system-wide packages:
